@@ -1,50 +1,74 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/auth.service';
 
 export default function LoginForm() {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); 
+    
+    console.log("تلاش برای لاگین با:", email); 
+
     try {
+
       const response = await authService.login(email, password);
-      localStorage.setItem('token', response.access_token);
-      router.push('/dashboard');
-    } catch (err) {
-      console.error('Login failed', err);
-      alert('خطا در ورود! مشخصات را چک کنید.');
+      console.log("پاسخ کامل:", response);
+
+
+      const token = response.data?.access_token;
+            
+      if (token) {
+        console.log("توکن پیدا شد، ذخیره و انتقال...");
+        localStorage.setItem('token', token);
+        
+
+        router.push('/dashboard');
+        
+      } else {
+        console.error("توکن در فیلد data پیدا نشد! پاسخ را چک کنید.");
+      }
+    } catch (error: any) {
+      alert("خطا: یا ایمیل اشتباهه یا سرور بک‌اِند خاموشه!");
+      console.error(error);
     }
   };
 
   return (
-    <form onSubmit={handleLogin} className="space-y-4">
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="ایمیل خود را وارد کنید"
-        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-        required
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="رمز عبور"
-        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-        required
-      />
-      <button
-        type="submit"
-        className="w-full py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-      >
-        ورود
-      </button>
-    </form>
+    <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">ورود به مدیریت تسک‌ها</h2>
+      
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <input
+            type="email"
+            placeholder="ایمیل (sheydaashoorian@gmail.com)"
+            className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <input
+            type="password"
+            placeholder="رمز عبور"
+            className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button
+          type="submit" 
+          className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+        >
+          ورود
+        </button>
+      </form>
+    </div>
   );
 }

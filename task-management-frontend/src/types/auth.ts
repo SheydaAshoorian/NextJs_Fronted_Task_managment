@@ -5,6 +5,17 @@ export interface User {
 }
 
 export interface LoginResponse {
-  access_token: string;
-  user: User;
+  statusCode: number;
+  message: string;
+  data: {
+    access_token: string;
+    user: {
+      id: number;
+      email: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      role: string;
+    };
+  };
 }
