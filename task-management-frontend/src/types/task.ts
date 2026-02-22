@@ -3,7 +3,7 @@ export type TaskStatus = 'Todo' | 'In_Progress' | 'Done' | 'OnGit';
 
 // ۱. ساختار اصلی که از API می‌گیریم (مطابق Entity)
 export interface ITask {
-  id: string;
+  id: number;
   title: string;
   description?: string;
   priority: TaskPriority;

@@ -1,30 +1,28 @@
 import api from '@/lib/api'; 
-import { ITask } from '@/types/task.types';
-
+import { ITask, CreateTaskDto, UpdateTaskDto } from '@/types/task.types';
 
 export const TaskService = {
-
-  /**
-   * دریافت لیست تسک‌ها
-   *  http://localhost:3001/api/v1/tasks
-   */
-  getAllTasks: async () => {
-    const response = await api.get<ITask[]>('/tasks');
-    return response.data;
+  // گرفتن همه تسک‌ها
+  getAllTasks: async (id: number) => {
+console.log('Sending request to server with ID:', id);
+    const response = await api.get(`/tasks/${id}`);
+    return response.data.data;
   },
 
-  /**
-   * ایجاد تسک جدید
-   */
-  createTask: async (taskData: Partial<ITask>) => {
-    const response = await api.post<ITask>('/tasks', taskData);
-    return response.data;
+  // ساخت تسک جدید (با Dto مخصوص خودش)
+  createTask: async (taskData: CreateTaskDto) => {
+    const response = await api.post('/tasks', taskData);
+    return response.data.data;
   },
-  
-  /**
-   * حذف تسک
-   */
-  deleteTask: async (id: number) => {
+
+  // آپدیت تسک (با Dto مخصوص خودش)
+  updateTask: async (id: string, taskData: UpdateTaskDto) => {
+    const response = await api.patch(`/tasks/${id}`, taskData);
+    return response.data.data;
+  },
+
+  // حذف تسک
+  deleteTask: async (id: string) => {
     await api.delete(`/tasks/${id}`);
   }
 };
