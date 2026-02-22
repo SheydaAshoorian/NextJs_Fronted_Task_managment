@@ -15,10 +15,11 @@ api.interceptors.request.use((config) => {
 
  // در سمت سرور ما چیزی به نام localStorage نداریم. این خط چک می‌کند که «آیا ما در مرورگر هستیم؟». اگر بله، ادامه بده.
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;   
-     }
+      const state = JSON.parse(localStorage.getItem('auth-storage') || '{}');
+      const token = state.state?.access_token;    
+      if (token) {
+          config.headers.Authorization = `Bearer ${token}`;   
+      }
   }
   return config;
 }, (error) => { // این بخش زمانی اجرا می‌شود که خودِ «ارسالِ ریکوئست» با خطا مواجه شود (مثلاً اینترنت قطع باشد یا مشکلی در تنظیمات ریکوئست باشد).
