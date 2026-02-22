@@ -1,11 +1,16 @@
-import api from '@/lib/api';
-import { LoginResponse } from '@/types/auth';
+import api from '@/lib/api'; 
+import { LoginDto, LoginResponse } from '../types/auth.types';
 
+interface IAuthService {
 
-export const authService = {
-  login: async (email: string, password: string): Promise<LoginResponse> => {
+  login: (credentials: LoginDto) => Promise<LoginResponse>;
+}
 
-    const { data } = await api.post<LoginResponse>('/auth/login', { email, password });
+export const AuthService: IAuthService = {
+
+  login: async (credentials: LoginDto) => {
+
+    const { data } = await api.post<LoginResponse>('auth/login', credentials);
     return data;
   }
 };
