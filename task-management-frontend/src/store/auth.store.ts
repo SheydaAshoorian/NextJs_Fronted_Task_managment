@@ -2,47 +2,57 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { IUser } from '../types/user.types';
 
-// ۱. تعریف شکلِ داده‌ها در استور
+// ۱. تعریف ساختار داده‌های استور
 interface AuthState {
   user: IUser | null;
-  token: string | null;
+  access_token: string | null;
   isAuthenticated: boolean;
-  // اکشن‌ها (توابعی که استیت را تغییر می‌دهند)
+  
+  // اکشن‌ها
   login: (user: IUser, token: string) => void;
   logout: () => void;
 }
 
-// ۲. این قابلیتِ زاستند باعث می‌شود که وقتی کاربر صفحه را رفرش می‌کند،
-//  اطلاعات لاگین (مثل توکن) از بین نرود و به صورت خودکار از localStorage بازخوانی شود.
+// ۲. ساخت استور با قابلیت ماندگاری (Persist)
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
+      // مقدار اولیه
       user: null,
-      token: null,
+      access_token: null,
       isAuthenticated: false,
 
-      // وقتی لاگین موفق بود، این تابع را صدا می‌زنیم
+      /**
+       * اکشن ورود: ذخیره اطلاعات کاربر و توکن
+       */
       login: (user, token) => 
         set({ 
           user, 
-          token, 
+          access_token: token, 
           isAuthenticated: true 
         }),
 
-      // برای خروج کاربر
+      /**
+       * اکشن خروج: پاکسازی کامل وضعیت و حافظه مرورگر
+       */
       logout: () => {
+        // الف) پاک کردن دیتای موجود در حافظه زنده اپلیکیشن
         set({ 
           user: null, 
-          token: null, 
+          access_token: null, 
           isAuthenticated: false 
         });
-        // اینجا می‌توانید LocalStorage را هم اگر لازم بود دستی پاک کنید، 
-        // هرچند خودِ persist این کار را انجام می‌دهد.
+
+        // ب) پاک کردن فیزیکی دیتای ذخیره شده در مرورگر
+        localStorage.removeItem('auth-storage');
+        
+        // ج) اختیاری: پاک کردن تمام کوکی‌ها یا استوریج‌های دیگر در صورت نیاز
+        // localStorage.clear(); // اگر می‌خواهی همه چیز پاک شود این را فعال کن
       },
     }),
     {
-      name: 'auth-storage', // نام کلید در LocalStorage
-      storage: createJSONStorage(() => localStorage), // انتخاب محل ذخیره (پیش‌فرض localStorage)
+      name: 'auth-storage', // نام کلید در LocalStorage مرورگر
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );
