@@ -1,76 +1,44 @@
 "use client";
-
 import { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth'; // وارد کردن هوک
 
 export default function LoginForm() {
-  // ۱. تعریف استیت‌های محلی برای فیلدهای فرم
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login, isLoading } = useAuth(); // وصل کردن هوک به کامپوننت
   
-  // ۲. استفاده از هوک کاستوم (جدا کردن منطق از ظاهر)
-  const { login, isLoading } = useAuth();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // ۳. فراخوانی تابع لاگین از هوک
-    // مقادیر اضافی مثل first_name صرفاً برای پاس کردن تایپ LoginDto هستند
-    await login({ 
-      email, 
-      password,
-      first_name: '', 
-      last_name: '',
-      role: 'user'
-    });
+    // فراخوانی تابع لاگین از هوک
+    await login({ email: formData.email, password: formData.password });
   };
 
   return (
-    <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-        ورود به مدیریت تسک‌ها
-      </h2>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
-          <input
-            type="email"
-            placeholder="example@gmail.com"
-            value={email}
-            className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 transition-all"
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">رمز عبور</label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 transition-all"
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-200 mt-2"
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
-              در حال ورود...
-            </span>
-          ) : (
-            "ورود به حساب"
-          )}
-        </button>
-      </form>
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <input 
+        type="email" 
+        placeholder="ایمیل"
+        className="w-full p-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"
+        onChange={(e) => setFormData({...formData, email: e.target.value})}
+        required 
+      />
+      <input 
+        type="password" 
+        placeholder="رمز عبور"
+        className="w-full p-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"
+        onChange={(e) => setFormData({...formData, password: e.target.value})}
+        required 
+      />
+      <button 
+        type="submit" 
+        disabled={isLoading}
+        className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold disabled:opacity-50"
+      >
+        {isLoading ? 'در حال ورود...' : 'ورود به حساب'}
+      </button>
+    </form>
   );
 }

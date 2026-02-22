@@ -1,9 +1,21 @@
 "use client";
+import { useState } from 'react'; // ۱. اضافه شد
 import StatCard from '@/components/dashboard/StatCard';
-import TaskTable from '@/components/dashboard/TaskTable'; // ایمپورت جدول
+import TaskTable from '@/components/dashboard/TaskTable';
+import AddTaskModal from '@/components/dashboard/AddTaskModal'; // ۲. ایمپورت مودال
 import { ClipboardList, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function DashboardPage() {
+  // ۳. استیت برای باز و بسته شدن مودال
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // ۴. استیت برای رفرش کردن جدول (با تغییر این عدد، جدول دوباره لود می‌شود)
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleTaskAdded = () => {
+    setRefreshKey(prev => prev + 1); // جدول را مجبور به رفرش می‌کند
+  };
+
   return (
     <div className="space-y-8">
       {/* بخش Header داخلی */}
@@ -12,7 +24,12 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900">میز کار من</h1>
           <p className="text-gray-500 text-sm mt-1">خلاصه وضعیت پروژه‌ها و تسک‌های امروز</p>
         </div>
-        <button className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+        
+        {/* ۵. وصل کردن دکمه به مودال */}
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
+        >
           + تسک جدید
         </button>
       </div>
@@ -27,8 +44,16 @@ export default function DashboardPage() {
 
       {/* بخش جدول تسک‌ها */}
       <div className="grid grid-cols-1 gap-6">
-        <TaskTable />
+        {/* ۶. اضافه کردن key برای آپدیت خودکار */}
+        <TaskTable key={refreshKey} />
       </div>
+
+      {/* ۷. فراخوانی خودِ مودال در انتهای صفحه */}
+      <AddTaskModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onTaskAdded={handleTaskAdded}
+      />
     </div>
   );
 }

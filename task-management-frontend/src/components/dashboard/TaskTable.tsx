@@ -1,63 +1,30 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { TaskService } from '@/services/task.service';
-import { ITask } from '@/types/task.types';
-import { useAuthStore } from '@/store/auth.store';
+import React from 'react';
+import { useTasks } from '@/hooks/useTasks';
 
 export default function TaskTable() {
-  const [tasks, setTasks] = useState<ITask[]>([]);
-  const [loading, setLoading] = useState(true);
+  // تمام منطق پیچیده حالا در یک خط خلاصه شده
+  const { tasks, loading, updateStatus } = useTasks();
 
-  // گرفتن دیتای کاربر از استور
-  const user = useAuthStore(state => state.user);
-  const userId = user?.id;
-
-  // تابع تغییر وضعیت تسک
+  // هندل کردن تغییر وضعیت با مدیریت خطا
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     try {
-      // ۱. آپدیت در سمت سرور (تبدیل آیدی تسک به عدد اگر لازم است)
-      await TaskService.updateTask(taskId, { status: newStatus as any });
-      
-      // ۲. آپدیت سریع در استیت محلی
-      setTasks(prevTasks => 
-        prevTasks.map(t => t.id === taskId ? { ...t, status: newStatus as any } : t)
-      );
-      
-      console.log(`وضعیت تسک ${taskId} به ${newStatus} تغییر یافت`);
+      await updateStatus(taskId, newStatus);
+      // اینجا می‌تونی یه Toast (اعلان موفقیت) هم بذاری
     } catch (error) {
-      console.error("خطا در بروزرسانی وضعیت:", error);
+      console.error("خطا در آپدیت:", error);
       alert("مشکلی در تغییر وضعیت پیش آمد");
     }
   };
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      // تبدیل به عدد برای جلوگیری از NaN
-      const currentId = Number(userId);
-
-      // اگر آیدی هنوز لود نشده یا معتبر نیست، درخواست نزن
-      if (!userId || isNaN(currentId)) {
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const data = await TaskService.getAllTasks(currentId);
-        setTasks(data);
-      } catch (error) {
-        console.error("خطا در دریافت تسک‌ها:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTasks();
-  }, [userId]); // وابستگی به userId برای اجرای مجدد پس از لود شدن کاربر
-
+  // حالت لودینگ شیک‌تر
   if (loading) {
     return (
       <div className="bg-white rounded-3xl p-20 text-center shadow-sm border border-gray-100 mt-6">
-        <div className="animate-pulse text-gray-400">در حال بارگذاری تسک‌ها...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-400 animate-pulse">در حال دریافت لیست تسک‌ها...</p>
+        </div>
       </div>
     );
   }
@@ -73,10 +40,10 @@ export default function TaskTable() {
         <table className="w-full text-right border-collapse">
           <thead className="bg-gray-50/50 text-gray-400 text-[12px] uppercase">
             <tr>
-              <th className="px-6 py-4 font-semibold">عنوان تسک</th>
+              <th className="px-6 py-4 font-semibold text-right">عنوان تسک</th>
               <th className="px-6 py-4 font-semibold text-center">مسئول</th>
               <th className="px-6 py-4 font-semibold text-center">وضعیت</th>
-              <th className="px-6 py-4 font-semibold text-center">ددلاین  </th>
+              <th className="px-6 py-4 font-semibold text-center">ددلاین</th>
             </tr>
           </thead>
 
@@ -84,27 +51,29 @@ export default function TaskTable() {
             {tasks && tasks.length > 0 ? (
               tasks.map((task) => (
                 <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
-                  {/* ستون عنوان */}
+                  {/* عنوان و توضیحات */}
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-gray-800">{task.title}</span>
-                      <span className="text-[11px] text-gray-400 line-clamp-1">{task.description || 'بدون توضیح'}</span>
+                      <span className="text-[11px] text-gray-400 line-clamp-1">
+                        {task.description || 'توضیحی ثبت نشده'}
+                      </span>
                     </div>
                   </td>
 
-                  {/* ستون مسئول */}
+                  {/* مسئول تسک */}
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-100">
                         {task.assignedTo?.first_name?.charAt(0) || '؟'}
                       </div>
                       <span className="text-xs text-gray-600">
-                        {task.assignedTo ? `${task.assignedTo.first_name} ${task.assignedTo.last_name}` : 'نامشخص'}
+                        {task.assignedTo ? `${task.assignedTo.first_name} ${task.assignedTo.last_name}` : 'بدون مسئول'}
                       </span>
                     </div>
                   </td>
 
-                  {/* ستون وضعیت (دراپ‌دان) */}
+                  {/* وضعیت (Select Box) */}
                   <td className="px-6 py-4 text-center">
                     <select
                       value={task.status}
@@ -122,7 +91,7 @@ export default function TaskTable() {
                     </select>
                   </td>
 
-                  {/* ستون تاریخ */}
+                  {/* ددلاین */}
                   <td className="px-6 py-4 text-center text-xs text-gray-400 font-mono">
                     {task.deadline ? 
                       new Date(task.deadline).toLocaleDateString('fa-IR') : '---'}
@@ -132,7 +101,7 @@ export default function TaskTable() {
             ) : (
               <tr>
                 <td colSpan={4} className="p-10 text-center text-gray-400 text-sm">
-                  تسکی برای نمایش یافت نشد.
+                  در حال حاضر تسکی برای نمایش وجود ندارد.
                 </td>
               </tr>
             )}
