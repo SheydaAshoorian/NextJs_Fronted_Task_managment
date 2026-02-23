@@ -30,9 +30,9 @@
 
 ```text
 src/
-├── app/# Pages & Routes
-├── components/# UI Components
-├── hooks/# Business Logic
-├── services/# API Layer
-├── store/# Global State (Zustand)
-└── types/# TypeScript Interfaces
+├── app/   # Pages & Routes
+├── components/   # UI Components
+├── hooks/   # Business Logic
+├── services/   # API Layer
+├── store/   # Global State (Zustand)
+└── types/   # TypeScript Interfaces
