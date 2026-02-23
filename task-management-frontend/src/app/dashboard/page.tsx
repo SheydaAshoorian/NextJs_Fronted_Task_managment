@@ -1,19 +1,35 @@
 "use client";
-import { useState } from 'react'; // ۱. اضافه شد
+import { useState } from 'react'; 
 import StatCard from '@/components/dashboard/StatCard';
 import TaskTable from '@/components/dashboard/TaskTable';
-import AddTaskModal from '@/components/dashboard/AddTaskModal'; // ۲. ایمپورت مودال
+import AddTaskModal from '@/components/dashboard/AddTaskModal'; 
 import { ClipboardList, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function DashboardPage() {
-  // ۳. استیت برای باز و بسته شدن مودال
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // ۴. استیت برای رفرش کردن جدول (با تغییر این عدد، جدول دوباره لود می‌شود)
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // استیت برای ذخیره تسکی که قرار است ادیت شود
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
 
   const handleTaskAdded = () => {
-    setRefreshKey(prev => prev + 1); // جدول را مجبور به رفرش می‌کند
+    setRefreshKey(prev => prev + 1); // رفرش لیست
+    setSelectedTask(null); // اطمینان از خالی شدن استیت بعد از عملیات
+  };
+
+  const handleEditClick = (task: any) => {
+    setSelectedTask(task); // پر کردن استیت برای ادیت
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTask(null); // مهم: وقتی مودال بسته می‌شود، تسک انتخاب شده را پاک می‌کنیم
+  };
+
+  const handleOpenCreateModal = () => {
+    setSelectedTask(null); // مطمئن می‌شویم برای تسک جدید، دیتایی از قبل نمانده باشد
+    setIsModalOpen(true);
   };
 
   return (
@@ -25,9 +41,8 @@ export default function DashboardPage() {
           <p className="text-gray-500 text-sm mt-1">خلاصه وضعیت پروژه‌ها و تسک‌های امروز</p>
         </div>
         
-        {/* ۵. وصل کردن دکمه به مودال */}
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreateModal}
           className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
         >
           + تسک جدید
@@ -44,15 +59,19 @@ export default function DashboardPage() {
 
       {/* بخش جدول تسک‌ها */}
       <div className="grid grid-cols-1 gap-6">
-        {/* ۶. اضافه کردن key برای آپدیت خودکار */}
-        <TaskTable key={refreshKey} />
+        {/* فقط یک بار TaskTable را صدا می‌زنیم و تابع ادیت را به آن پاس می‌دهیم */}
+        <TaskTable 
+          key={refreshKey} 
+          onEdit={handleEditClick} 
+        />
       </div>
 
-      {/* ۷. فراخوانی خودِ مودال در انتهای صفحه */}
+      {/* فراخوانی مودال با دیتای اولیه */}
       <AddTaskModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={handleCloseModal} 
         onTaskAdded={handleTaskAdded}
+        initialData={selectedTask} // پاس دادن تسک انتخاب شده برای ویرایش
       />
     </div>
   );

@@ -11,13 +11,13 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onTaskAdded: () => void;
+  initialData?: any; 
 }
 
-export default function AddTaskModal({ isOpen, onClose, onTaskAdded }: Props) {
-  // ۱. استخراج اطلاعات کاربر لاگین شده برای تعیین سازنده تسک
+export default function AddTaskModal({ isOpen, onClose, onTaskAdded, initialData }: Props) {
   const user = useAuthStore(state => state.user);
 
-  // ۲. استیت‌های فرم (با مقادیر اولیه هماهنگ با بک‌اِند)
+  // استیت‌های فرم
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('medium');
@@ -28,9 +28,10 @@ export default function AddTaskModal({ isOpen, onClose, onTaskAdded }: Props) {
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<IUser[]>([]);
 
-  // دریافت لیست کاربران برای دراپ‌دان مسئول
+
   useEffect(() => {
     if (isOpen) {
+
       const loadUsers = async () => {
         try {
           const data = await UserService.getAllUsers();
@@ -40,50 +41,63 @@ export default function AddTaskModal({ isOpen, onClose, onTaskAdded }: Props) {
         }
       };
       loadUsers();
+
+
+      if (initialData) {
+        setTitle(initialData.title || '');
+        setDescription(initialData.description || '');
+        setPriority(initialData.priority || 'medium');
+        setStatus(initialData.status || 'todo');
+        setAssignedToId(initialData.assignedTo?.id?.toString() || initialData.assignedToId?.toString() || '');
+
+        setDeadline(initialData.deadline ? initialData.deadline.split('T')[0] : '');
+      } else {
+
+        resetForm();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setDeadline('');
+    setAssignedToId('');
+    setPriority('medium');
+    setStatus('todo');
+  };
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user?.id) {
-      alert("لطفاً ابتدا وارد حساب کاربری خود شوید.");
-      return;
-    }
-
+    if (!user?.id) return;
     setLoading(true);
 
-    // ۳. آماده‌سازی پکیج دیتا دقیقاً مطابق انتظار NestJS و دیتابیس
-    const newTask = {
+    const taskPayload = {
       title: title.trim(),
       description: description.trim(),
-      priority: priority, // مقدار از پیش کوچک شده
-      status: status,     // مقدار از پیش کوچک شده
+      priority,
+      status,
       assignedToId: Number(assignedToId),
-      createdById: Number(user.id), // آیدی کاربر لاگین شده
+      createdById: Number(user.id),
       deadline: deadline ? new Date(deadline).toISOString() : null
     };
 
     try {
-      // ارسال به سرویس
-      await TaskService.createTask(newTask as any); 
+      if (initialData?.id) {
+
+        await TaskService.updateTask(initialData.id.toString(), taskPayload as any);
+      } else {
+
+        await TaskService.createTask(taskPayload as any);
+      }
       
-      // موفقیت‌آمیز: ریست فرم و اطلاع به والد
-      setTitle('');
-      setDescription('');
-      setDeadline('');
-      setAssignedToId('');
-      setPriority('medium');
-      setStatus('todo');
-      
-      onTaskAdded(); // رفرش جدول
-      onClose();     // بستن مودال
-      
+      onTaskAdded();
+      onClose();
+      resetForm();
     } catch (error: any) {
-      console.error("خطای ارسالی به سرور:", error.response?.data);
-      alert("خطا در ثبت تسک: " + (error.response?.data?.message || "اطلاعات ناقص است"));
+      alert("خطا: " + (error.response?.data?.message || "عملیات ناموفق"));
     } finally {
       setLoading(false);
     }
@@ -93,35 +107,30 @@ export default function AddTaskModal({ isOpen, onClose, onTaskAdded }: Props) {
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-[vazir,tahoma]">
       <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-lg shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200 overflow-y-auto max-h-[90vh]">
         <h2 className="text-2xl font-black mb-6 text-slate-800 text-right flex items-center justify-end gap-2">
-          ✨ ایجاد فعالیت جدید
+          {initialData ? '✏️ ویرایش فعالیت' : '✨ ایجاد فعالیت جدید'}
         </h2>
         
         <form onSubmit={handleSubmit} className="space-y-5 text-right" dir="rtl">
-          {/* عنوان */}
           <div>
             <label className="block text-sm font-bold text-slate-500 mb-2 mr-1">عنوان تسک</label>
             <input 
               type="text" 
               className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-black transition-all"
-              placeholder="مثلاً: طراحی صفحه لاگین"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
             />
           </div>
 
-          {/* توضیحات */}
           <div>
             <label className="block text-sm font-bold text-slate-500 mb-2 mr-1">توضیحات</label>
             <textarea 
               className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-black h-24 resize-none transition-all"
-              placeholder="جزئیات تسک را اینجا بنویسید..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
 
-          {/* انتخاب مسئول */}
           <div>
             <label className="block text-sm font-bold text-slate-500 mb-2 mr-1">مسئول انجام</label>
             <select 
@@ -139,12 +148,11 @@ export default function AddTaskModal({ isOpen, onClose, onTaskAdded }: Props) {
             </select>
           </div>
 
-          {/* اولویت و وضعیت در یک ردیف */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-slate-500 mb-2 mr-1">اولویت</label>
               <select 
-                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-black font-medium"
+                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-black"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TaskPriority)}>
                 <option value="high">🔴 بالا</option>
@@ -155,7 +163,7 @@ export default function AddTaskModal({ isOpen, onClose, onTaskAdded }: Props) {
             <div>
               <label className="block text-sm font-bold text-slate-500 mb-2 mr-1">وضعیت</label>
               <select 
-                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-black font-medium"
+                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-black"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}>
                 <option value="todo">باز (Todo)</option>
@@ -166,9 +174,8 @@ export default function AddTaskModal({ isOpen, onClose, onTaskAdded }: Props) {
             </div>
           </div>
 
-          {/* ددلاین */}
           <div>
-            <label className="block text-sm font-bold text-slate-500 mb-2 mr-1">موعد تحویل (Deadline)</label>
+            <label className="block text-sm font-bold text-slate-500 mb-2 mr-1">موعد تحویل</label>
             <input 
               type="date" 
               className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-black"
@@ -177,19 +184,18 @@ export default function AddTaskModal({ isOpen, onClose, onTaskAdded }: Props) {
             />
           </div>
 
-          {/* دکمه‌های عملیاتی */}
           <div className="flex gap-3 pt-4">
             <button 
               type="submit" 
               disabled={loading}
-              className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 active:scale-95"
+              className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95"
             >
-              {loading ? 'در حال ثبت...' : 'تایید و ثبت فعالیت'}
+              {loading ? 'در حال ثبت...' : (initialData ? 'ذخیره تغییرات' : 'تایید و ثبت فعالیت')}
             </button>
             <button 
               type="button" 
               onClick={onClose}
-              className="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
+              className="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all"
             >
               انصراف
             </button>

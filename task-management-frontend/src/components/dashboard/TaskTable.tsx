@@ -1,23 +1,25 @@
 "use client";
 import React from 'react';
 import { useTasks } from '@/hooks/useTasks';
+import { Pencil } from 'lucide-react';
 
-export default function TaskTable() {
-  // تمام منطق پیچیده حالا در یک خط خلاصه شده
+// تعریف تایپ برای ورودی‌های جدول
+interface TaskTableProps {
+  onEdit: (task: any) => void;
+}
+
+export default function TaskTable({ onEdit }: TaskTableProps) {
+  // دریافت دیتا و توابع از هوک سفارشی
   const { tasks, loading, updateStatus } = useTasks();
 
-  // هندل کردن تغییر وضعیت با مدیریت خطا
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     try {
       await updateStatus(taskId, newStatus);
-      // اینجا می‌تونی یه Toast (اعلان موفقیت) هم بذاری
     } catch (error) {
       console.error("خطا در آپدیت:", error);
-      alert("مشکلی در تغییر وضعیت پیش آمد");
     }
   };
 
-  // حالت لودینگ شیک‌تر
   if (loading) {
     return (
       <div className="bg-white rounded-3xl p-20 text-center shadow-sm border border-gray-100 mt-6">
@@ -44,6 +46,7 @@ export default function TaskTable() {
               <th className="px-6 py-4 font-semibold text-center">مسئول</th>
               <th className="px-6 py-4 font-semibold text-center">وضعیت</th>
               <th className="px-6 py-4 font-semibold text-center">ددلاین</th>
+              <th className="px-6 py-4 font-semibold text-center">عملیات</th>
             </tr>
           </thead>
 
@@ -51,7 +54,6 @@ export default function TaskTable() {
             {tasks && tasks.length > 0 ? (
               tasks.map((task) => (
                 <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
-                  {/* عنوان و توضیحات */}
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-gray-800">{task.title}</span>
@@ -61,7 +63,6 @@ export default function TaskTable() {
                     </div>
                   </td>
 
-                  {/* مسئول تسک */}
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-100">
@@ -73,7 +74,6 @@ export default function TaskTable() {
                     </div>
                   </td>
 
-                  {/* وضعیت (Select Box) */}
                   <td className="px-6 py-4 text-center">
                     <select
                       value={task.status}
@@ -91,16 +91,24 @@ export default function TaskTable() {
                     </select>
                   </td>
 
-                  {/* ددلاین */}
                   <td className="px-6 py-4 text-center text-xs text-gray-400 font-mono">
-                    {task.deadline ? 
-                      new Date(task.deadline).toLocaleDateString('fa-IR') : '---'}
+                    {task.deadline ? new Date(task.deadline).toLocaleDateString('fa-IR') : '---'}
+                  </td>
+
+                  <td className="px-6 py-4 text-center">
+                    <button 
+                      onClick={() => onEdit(task)} // استفاده از تابع پاس داده شده از صفحه پدر
+                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-all active:scale-90"
+                      title="ویرایش تسک"
+                    >
+                      <Pencil size={18} />
+                    </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="p-10 text-center text-gray-400 text-sm">
+                <td colSpan={5} className="p-10 text-center text-gray-400 text-sm">
                   در حال حاضر تسکی برای نمایش وجود ندارد.
                 </td>
               </tr>
